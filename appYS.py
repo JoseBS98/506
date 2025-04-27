@@ -84,7 +84,7 @@ with right:
 
         # 3) pick a huge font size
         try:
-            font = ImageFont.truetype("arial.ttf", 300)
+            font = ImageFont.truetype("arial.ttf", 1000)
         except:
             font = ImageFont.load_default()
 
