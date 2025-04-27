@@ -84,25 +84,30 @@ with right:
         draw.rectangle(rect, fill=(255,0,0,200))
 
         text = f"{y_pred:.1f} MPa"
-        # choose font
+              # -------- draw the text (no red bar) --------------------
+        text = f"{y_pred:.1f} MPa"
+
         try:
-            font = ImageFont.truetype("arial.ttf", 100)
+            font = ImageFont.truetype("arial.ttf", 46)   # larger font
         except:
             font = ImageFont.load_default()
 
-        rect = (120, 205, 460, 275)     # window area on printer
-        # text size (bbox new Pillow, fallback old)
-        try:
+        rect = (120, 205, 460, 275)        # window area
+        try:                               # Pillow ≥10
             bbox = draw.textbbox((0, 0), text, font=font)
-            w, h = bbox[2]-bbox[0], bbox[3]-bbox[1]
-        except AttributeError:
+            w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+        except AttributeError:             # older Pillow
             w, h = draw.textsize(text, font=font)
 
         x = rect[0] + (rect[2]-rect[0]-w)//2
         y = rect[1] + (rect[3]-rect[1]-h)//2
 
-        # **shadow for contrast**
-        draw.text((x+2, y+2), text, fill="white", font=font)
-        # **main white text**
-        draw.text((x, y), text, fill="white", font=font)
+        # black shadow for contrast
+        draw.text((x+2, y+2), text, fill="black", font=font)
+        # main text (bright yellow stands out everywhere)
+        draw.text((x, y), text, fill="#ffd600", font=font)
 
+        # -------- convert to RGB & display ----------------------
+        buf = io.BytesIO()
+        img.convert("RGB").save(buf, format="PNG")   # <-- key change
+        img_slot.image(buf.getvalue(), use_container_width=True)
