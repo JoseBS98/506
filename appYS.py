@@ -112,8 +112,8 @@ with right:
         W, H = img.size
         center_x, center_y = W // 2, H // 2
         offset_x, offset_y = 0, 0  # <--- tweak these values (pixels)
-        x = center_x - w // 2 + -50
-        y = center_y - h // 2 + 50
+        x = center_x - w // 2 - 500
+        y = center_y - h // 2 + 500
 
         # 6) draw shadow + main text
         draw.text((x+2, y+2), text, fill="black",    font=font)
