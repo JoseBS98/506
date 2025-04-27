@@ -45,7 +45,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.markdown("<h1 style='text-align:center;'>Predicted Yield Strength</h1>",
+st.markdown("<h1 style='text-align:center;'>Yield Strength Calculator</h1>",
             unsafe_allow_html=True)
 
 # ── two-column layout ──────────────────────────────────────────────
@@ -62,7 +62,7 @@ img_slot.image(base_img, use_container_width=True)
 
 # -------- right: parameter inputs ---------------------------------
 with right:
-    st.markdown("### 3-D Printer Yield-Strength Calculator")
+    st.markdown("### Concept Laser M2 Laser Powder Bed Fusion (L-PBF) stainless steel 316L")
     st.markdown("Set the operating parameters then click **Predict**.")
 
     hatch   = st.number_input("Hatch spacing (µm)",   70.0,110.0, 90.0, step=0.1)
