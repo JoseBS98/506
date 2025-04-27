@@ -8,7 +8,7 @@ from sklearn.ensemble import RandomForestRegressor
 # ── file locations (all paths are relative to this script) ─────────
 ROOT        = Path(__file__).parent
 MODEL_PATH  = ROOT / "yield_strength_rf.pkl"
-DATA_PATH   = ROOT / "Parameters_Combined_simulated.csv"   # change if needed
+DATA_PATH   = ROOT / "Parameters_simulations.csv"   # change if needed
 PRINTER_IMG = ROOT / "printer.png"                         # M2 picture
 
 # ── load existing model or train a new one on the fly ──────────────
