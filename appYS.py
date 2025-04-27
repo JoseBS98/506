@@ -88,7 +88,7 @@ with right:
         text = f"{y_pred:.1f} MPa"
 
         try:
-            font = ImageFont.truetype("arial.ttf", 46)   # larger font
+            font = ImageFont.truetype("arial.ttf", 100)   # larger font
         except:
             font = ImageFont.load_default()
 
