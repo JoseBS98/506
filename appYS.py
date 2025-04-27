@@ -92,7 +92,7 @@ with right:
         font = None
         for p in FONT_PATHS:
             try:
-                font = ImageFont.truetype(p, 50)
+                font = ImageFont.truetype(p, 2000)
                 break
             except OSError:
                 continue
@@ -108,9 +108,12 @@ with right:
         except AttributeError:
             w, h = font.getsize(text)
 
-        # 5) center the text
+        # 5) start from image center and apply offsets
         W, H = img.size
-        x, y = (W - w)//2, (H - h)//2
+        center_x, center_y = W // 2, H // 2
+        offset_x, offset_y = 0, 0  # <--- tweak these values (pixels)
+        x = center_x - w // 2 + -50
+        y = center_y - h // 2 + 50
 
         # 6) draw shadow + main text
         draw.text((x+2, y+2), text, fill="black",    font=font)
