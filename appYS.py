@@ -92,7 +92,7 @@ with right:
         font = None
         for p in FONT_PATHS:
             try:
-                font = ImageFont.truetype(p, 2000)
+                font = ImageFont.truetype(p, 50)
                 break
             except OSError:
                 continue
