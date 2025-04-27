@@ -1,4 +1,3 @@
-# appYS.py ───────────────────────────────────────────────────────────
 import streamlit as st
 import pandas as pd, numpy as np, joblib, io
 from pathlib import Path
@@ -9,7 +8,7 @@ from sklearn.ensemble import RandomForestRegressor
 ROOT        = Path(__file__).parent
 MODEL_PATH  = ROOT / "yield_strength_rf.pkl"
 DATA_PATH   = ROOT / "Parameters_simulation.csv"   # change if needed
-PRINTER_IMG = ROOT / "printer.png"                         # M2 picture
+PRINTER_IMG = ROOT / "printer.png"                  # M2 picture
 
 # ── load existing model or train a new one on the fly ──────────────
 def get_model():
@@ -38,12 +37,13 @@ st.set_page_config(page_title="Yield-Strength Calculator",
 st.markdown(
     """
     <style>
-        body{background:#000; }                  /* dark background */
+        body{background:#000;}                  
         h1,h3,label{color:#fff !important;}
         .stButton>button{background:#444;color:#fff;}
     </style>
     """,
-    unsafe_allow_html=True)
+    unsafe_allow_html=True
+)
 
 st.markdown("<h1 style='text-align:center;'>Predicted Yield Strength</h1>",
             unsafe_allow_html=True)
@@ -73,40 +73,32 @@ with right:
     stripe  = st.number_input("Stripe width (mm)",      5.0, 20.0, 10.0, step=0.1)
 
     if st.button("Predict Yield Strength"):
-        # prediction
+        # 1) predict
         X_new  = np.array([[hatch, power, speed, spot, rot, stripe]])
         y_pred = model.predict(X_new)[0]
+        text   = f"{y_pred:.1f} MPa"
 
-        # draw red rectangle + text on a copy of printer image
-        img = base_img.copy()
-        draw = ImageDraw.Draw(img, "RGBA")
-        rect = (120, 205, 460, 275)                # adjust if needed
+        # 2) draw on a copy
+        img  = base_img.copy().convert("RGB")
+        draw = ImageDraw.Draw(img)
 
-        text = f"{y_pred:.1f} MPa"
-              # -------- draw the text (no red bar) --------------------
-        text = f"{y_pred:.1f} MPa"
-
+        # 3) pick a huge font size
         try:
-            font = ImageFont.truetype("arial.ttf", 1000)   # larger font
+            font = ImageFont.truetype("arial.ttf", 300)
         except:
             font = ImageFont.load_default()
 
-        rect = (120, 205, 460, 275)        # window area
-        try:                               # Pillow ≥10
-            bbox = draw.textbbox((0, 0), text, font=font)
-            w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
-        except AttributeError:             # older Pillow
-            w, h = draw.textsize(text, font=font)
+        # 4) compute horizontal + vertical center
+        W, H        = img.size
+        w, h        = draw.textsize(text, font=font)
+        x, y        = (W - w)//2, (H - h)//2
 
-        x = rect[0] + (rect[2]-rect[0]-w)//2
-        y = rect[1] + (rect[3]-rect[1]-h)//2
+        # 5) draw a shadow + main text
+        draw.text((x+2, y+2), text, fill="black",    font=font)
+        draw.text((x,   y),   text, fill="#ffd600", font=font)
 
-        # black shadow for contrast
-        draw.text((x+2, y+2), text, fill="black", font=font)
-        # main text (bright yellow stands out everywhere)
-        draw.text((x, y), text, fill="#ffd600", font=font)
-
-        # -------- convert to RGB & display ----------------------
+        # 6) send back to Streamlit at a fixed width
         buf = io.BytesIO()
-        img.convert("RGB").save(buf, format="PNG")   # <-- key change
-        img_slot.image(buf.getvalue(), use_container_width=True)
+        img.save(buf, format="PNG")
+        # —––––– replace use_container_width with a fixed pixel width
+        img_slot.image(buf.getvalue(), width=900)
