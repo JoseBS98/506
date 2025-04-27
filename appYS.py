@@ -81,14 +81,13 @@ with right:
         img = base_img.copy()
         draw = ImageDraw.Draw(img, "RGBA")
         rect = (120, 205, 460, 275)                # adjust if needed
-        draw.rectangle(rect, fill=(255,0,0,200))
 
         text = f"{y_pred:.1f} MPa"
               # -------- draw the text (no red bar) --------------------
         text = f"{y_pred:.1f} MPa"
 
         try:
-            font = ImageFont.truetype("arial.ttf", 100)   # larger font
+            font = ImageFont.truetype("arial.ttf", 1000)   # larger font
         except:
             font = ImageFont.load_default()
 
