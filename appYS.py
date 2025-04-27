@@ -1,4 +1,3 @@
-# appYS.py
 import streamlit as st
 import pandas as pd, numpy as np, joblib, io
 from pathlib import Path
@@ -58,7 +57,7 @@ if not PRINTER_IMG.exists():
     st.stop()
 base_img = Image.open(PRINTER_IMG).convert("RGBA")
 img_slot = left.empty()
-# use_container_width instead of the deprecated use_column_width
+# display at container width
 img_slot.image(base_img, use_container_width=True)
 
 # -------- right: parameter inputs ---------------------------------
@@ -84,19 +83,29 @@ with right:
         img  = base_img.copy().convert("RGB")
         draw = ImageDraw.Draw(img)
 
-        # 3) choose a large font
-        try:
-            font = ImageFont.truetype("arial.ttf", 10000)
-        except:
-            font = ImageFont.load_default()
+        # 3) load a scalable TrueType font
+        FONT_PATHS = [
+            str(ROOT / "fonts" / "DejaVuSans.ttf"),
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+        ]
+        font = None
+        for p in FONT_PATHS:
+            try:
+                font = ImageFont.truetype(p, 2000)
+                break
+            except OSError:
+                continue
+        if font is None:
+            st.error("TrueType font not found. Please add a .ttf file to the 'fonts/' directory.")
+            st.stop()
 
-        # 4) compute text size via textbbox (Pillow ≥10)
+        # 4) measure text size via textbbox (Pillow ≥10) with fallback
         try:
             bbox = draw.textbbox((0, 0), text, font=font)
             w = bbox[2] - bbox[0]
             h = bbox[3] - bbox[1]
         except AttributeError:
-            # fallback for older Pillow versions
             w, h = font.getsize(text)
 
         # 5) center the text
@@ -107,7 +116,7 @@ with right:
         draw.text((x+2, y+2), text, fill="black",    font=font)
         draw.text((x,   y),   text, fill="#ffd600", font=font)
 
-        # 7) send it back at a fixed width so it’s not auto-scaled
+        # 7) send back to Streamlit at fixed width
         buf = io.BytesIO()
         img.save(buf, format="PNG")
         img_slot.image(buf.getvalue(), width=900)
