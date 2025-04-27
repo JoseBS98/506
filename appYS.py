@@ -102,7 +102,7 @@ with right:
         y = rect[1] + (rect[3]-rect[1]-h)//2
 
         # **shadow for contrast**
-        draw.text((x+2, y+2), text, fill="black", font=font)
+        draw.text((x+2, y+2), text, fill="white", font=font)
         # **main white text**
         draw.text((x, y), text, fill="white", font=font)
 
