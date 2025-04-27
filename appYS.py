@@ -1,3 +1,4 @@
+# appYS.py
 import streamlit as st
 import pandas as pd, numpy as np, joblib, io
 from pathlib import Path
@@ -37,9 +38,9 @@ st.set_page_config(page_title="Yield-Strength Calculator",
 st.markdown(
     """
     <style>
-        body{background:#000;}                  
-        h1,h3,label{color:#fff !important;}
-        .stButton>button{background:#444;color:#fff;}
+        body { background: #000; }
+        h1, h3, label { color: #fff !important; }
+        .stButton > button { background: #444; color: #fff; }
     </style>
     """,
     unsafe_allow_html=True
@@ -57,7 +58,8 @@ if not PRINTER_IMG.exists():
     st.stop()
 base_img = Image.open(PRINTER_IMG).convert("RGBA")
 img_slot = left.empty()
-img_slot.image(base_img, use_column_width=True)
+# use_container_width instead of the deprecated use_column_width
+img_slot.image(base_img, use_container_width=True)
 
 # -------- right: parameter inputs ---------------------------------
 with right:
@@ -78,27 +80,34 @@ with right:
         y_pred = model.predict(X_new)[0]
         text   = f"{y_pred:.1f} MPa"
 
-        # 2) draw on a copy
+        # 2) draw on a copy of the printer image
         img  = base_img.copy().convert("RGB")
         draw = ImageDraw.Draw(img)
 
-        # 3) pick a huge font size
+        # 3) choose a large font
         try:
-            font = ImageFont.truetype("arial.ttf", 1000)
+            font = ImageFont.truetype("arial.ttf", 300)
         except:
             font = ImageFont.load_default()
 
-        # 4) compute horizontal + vertical center
-        W, H        = img.size
-        w, h        = draw.textsize(text, font=font)
-        x, y        = (W - w)//2, (H - h)//2
+        # 4) compute text size via textbbox (Pillow ≥10)
+        try:
+            bbox = draw.textbbox((0, 0), text, font=font)
+            w = bbox[2] - bbox[0]
+            h = bbox[3] - bbox[1]
+        except AttributeError:
+            # fallback for older Pillow versions
+            w, h = font.getsize(text)
 
-        # 5) draw a shadow + main text
+        # 5) center the text
+        W, H = img.size
+        x, y = (W - w)//2, (H - h)//2
+
+        # 6) draw shadow + main text
         draw.text((x+2, y+2), text, fill="black",    font=font)
         draw.text((x,   y),   text, fill="#ffd600", font=font)
 
-        # 6) send back to Streamlit at a fixed width
+        # 7) send it back at a fixed width so it’s not auto-scaled
         buf = io.BytesIO()
         img.save(buf, format="PNG")
-        # —––––– replace use_container_width with a fixed pixel width
         img_slot.image(buf.getvalue(), width=900)
