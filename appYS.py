@@ -1,70 +1,74 @@
-# app.py
-# -*- coding: utf-8 -*-
+# app.py  ──────────────────────────────────────────────────────────
+import streamlit as st
+import joblib
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
+import io
 
-import pandas as pd               # Tabular Data
-import numpy as np                # Mathematical calculations & Arrays
-import matplotlib.pyplot as plt   # Plot and customize charts
-import seaborn as sns             # Advanced visualizations
-import streamlit as st             # Web app
-import joblib                      # Save and load models
-import os
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.ensemble import RandomForestRegressor
+# -----------------------------------------------------------------
+# Load model & printer photo
+# -----------------------------------------------------------------
+model      = joblib.load("yield_strength_rf.pkl")
+printer_im = Image.open("printer.png").convert("RGBA")   # 1 × file
 
-# --------- Load and prepare data ---------
-# Assuming the CSV is uploaded with the app or placed in the same folder
-DATA_FILE = "Parameters_simulation.csv"
+# -----------------------------------------------------------------
+# Page config / dark mode
+# -----------------------------------------------------------------
+st.set_page_config(page_title="Yield-Strength Calculator",
+                   page_icon="🖨️",
+                   layout="wide",
+                   initial_sidebar_state="auto")
+st.markdown(
+    """
+    <style>
+        body { background-color:#000000; }
+        h1   { color:#ffffff; text-align:center; }
+        h3   { color:#ffffff; }
+        label, input, div[data-baseweb="input"]  { color:#ffffff !important; }
+    </style>
+    """,
+    unsafe_allow_html=True)
 
-if os.path.exists(DATA_FILE):
-    df2 = pd.read_csv(DATA_FILE)
-else:
-    st.error(f"Cannot find {DATA_FILE}. Please upload it with your app files.")
-    st.stop()
+st.markdown("## &nbsp;")          # small vertical offset
+st.markdown("<h1>Predicted Yield Strength</h1>", unsafe_allow_html=True)
 
-# Drop unnecessary column
-if 'laser_module' in df2.columns:
-    df2 = df2.drop(columns=['laser_module'])
+# -----------------------------------------------------------------
+# Layout: 2 equal columns
+# -----------------------------------------------------------------
+col_left, col_right = st.columns(2, gap="large")
 
-# Exclude 'yield_strength' from descriptors
-descriptors = [col for col in df2.columns if col != 'yield_strength']
-X = df2[descriptors]
-y = df2['yield_strength']
+# ---------------- Left column: printer photo + prediction ----------
+with col_left:
+    st.markdown("###")  # spacing
+    # placeholder for dynamic image
+    img_slot = st.empty()
 
-# Split into training/testing
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+# ---------------- Right column: parameter inputs -------------------
+with col_right:
+    st.markdown("### 3-D Printer Yield-Strength Calculator")
+    st.markdown("Set the operating parameters below to predict the expected "
+                "**Yield Strength** (MPa) of the printed part.")
 
-# --------- Train model if not already saved ---------
-MODEL_FILE = "yield_strength_rf.pkl"
+    hatch      = st.number_input("Hatch spacing (µm)",        70.0, 110.0, 90.0,  step=0.1)
+    power      = st.number_input("Laser beam power (W)",     300.0, 450.0, 360.0, step=0.1)
+    speed      = st.number_input("Laser beam speed (mm/s)", 1200.0,1600.0,1350.0, step=1.0)
+    spot       = st.number_input("Laser spot size (µm)",     110.0, 150.0, 127.0, step=0.1)
+    rotation   = st.number_input("Scan rotation (deg)",        0.0,  90.0,  65.0, step=0.5)
+    stripe     = st.number_input("Stripe width (mm)",          5.0,  20.0,  10.0, step=0.1)
 
-if not os.path.exists(MODEL_FILE):
-    model = RandomForestRegressor()
-    scores = cross_val_score(model, X, y, cv=20, scoring='r2')
+    if st.button("Predict Yield Strength"):
+        # --------------------------------------
+        # 1.  Predict
+        # --------------------------------------
+        X_new  = np.array([[hatch, power, speed, spot, rotation, stripe]])
+        y_pred = model.predict(X_new)[0]
 
-    print("Cross-Validation Results:")
-    print("Scores:", scores)
-    print("CV average:", round(scores.mean(), 4))
-    print("CV std. dev:", round(scores.std(), 4))
+        # --------------------------------------
+        # 2.  Draw red rectangle + text on image
+        # --------------------------------------
+        im = printer_im.copy()
+        draw = ImageDraw.Draw(im, "RGBA")
 
-    model.fit(X_train, y_train)
-    joblib.dump(model, MODEL_FILE)
-
-# Load the trained model
-model = joblib.load(MODEL_FILE)
-
-# --------- Streamlit App ---------
-st.title("3-D Printer Yield-Strength Calculator")
-
-st.markdown("Set the operating parameters below to predict the expected **Yield Strength** (MPa) of the printed part.")
-
-# UI controls
-hatch    = st.number_input("Hatch spacing (µm)",        min_value=70.0, max_value=110.0, value=90.0)
-power    = st.number_input("Laser beam power (W)",      min_value=300.0, max_value=450.0, value=360.0)
-speed    = st.number_input("Laser beam speed (mm/s)",   min_value=1200.0, max_value=1600.0, value=1350.0)
-spot     = st.number_input("Laser spot size (µm)",      min_value=110.0, max_value=150.0, value=127.0)
-rotation = st.number_input("Scan rotation (deg)",       min_value=0.0, max_value=90.0, value=65.0)
-stripe   = st.number_input("Stripe width (mm)",         min_value=5.0, max_value=20.0, value=10.0)
-
-if st.button("Predict Yield Strength"):
-    X_new = np.array([[hatch, power, speed, spot, rotation, stripe]])
-    y_pred = model.predict(X_new)[0]
-    st.success(f"Predicted Yield Strength: **{y_pred:.1f} MPa**")
+        # Rectangle position (manually tuned for the M2 image):
+        rect = (120, 205, 460, 275)          # (x0,y0,x1,y1)
+        draw.rectangle(rect, fill=(255,0,0,200))   # semi-
