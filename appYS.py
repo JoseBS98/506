@@ -84,13 +84,16 @@ with right:
         draw.rectangle(rect, fill=(255,0,0,200))
 
         text = f"{y_pred:.1f} MPa"
-        try:
-            font = ImageFont.truetype("arial.ttf", 32)
-        except:
-            font = ImageFont.load_default()
-        w, h = draw.textsize(text, font=font)
-        x    = rect[0] + (rect[2]-rect[0]-w)//2
-        y    = rect[1] + (rect[3]-rect[1]-h)//2
+          # --- compute text width/height robustly -------------------
+        try:                                 # Pillow ≥10
+            bbox = draw.textbbox((0, 0), text, font=font)
+            w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+        except AttributeError:               # older Pillow fallback
+            w, h = draw.textsize(text, font=font)
+
+        # centre the text inside the red rectangle
+        x = rect[0] + (rect[2] - rect[0] - w) // 2
+        y = rect[1] + (rect[3] - rect[1] - h) // 2
         draw.text((x, y), text, fill="white", font=font)
 
         # update image in the app
