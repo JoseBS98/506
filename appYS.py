@@ -84,19 +84,26 @@ with right:
         draw.rectangle(rect, fill=(255,0,0,200))
 
         text = f"{y_pred:.1f} MPa"
-          # --- compute text width/height robustly -------------------
-        try:                                 # Pillow ≥10
+        # ----- choose a font (always define it FIRST) -------------
+        try:
+            font = ImageFont.truetype("arial.ttf", 32)   # nicer if available
+        except:
+            font = ImageFont.load_default()              # guaranteed to exist
+
+        # ----- compute text width / height ------------------------
+        try:                                            # Pillow ≥10
             bbox = draw.textbbox((0, 0), text, font=font)
             w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
-        except AttributeError:               # older Pillow fallback
+        except AttributeError:                          # Pillow <10
             w, h = draw.textsize(text, font=font)
 
-        # centre the text inside the red rectangle
+        # ----- center the text in the red rectangle --------------
         x = rect[0] + (rect[2] - rect[0] - w) // 2
         y = rect[1] + (rect[3] - rect[1] - h) // 2
         draw.text((x, y), text, fill="white", font=font)
 
-        # update image in the app
+        # ----- show updated image (new Streamlit arg) ------------
         buf = io.BytesIO()
         img.save(buf, format="PNG")
-        img_slot.image(buf.getvalue(), use_column_width=True)
+        img_slot.image(buf.getvalue(), use_container_width=True)
+
